@@ -14,7 +14,7 @@ import {
   Platform,
   ScrollView
 } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+import { secureStorage } from '../utils/secureStorage';
 import { authApi } from '../services/api/auth.api';
 import { userApi } from '../services/api/user.api';
 import { useUserStore } from '../store/userStore';
@@ -91,7 +91,7 @@ export const RegisterScreen: React.FC = () => {
       });
 
       await login(response.access_token, response.user);
-      await SecureStore.setItemAsync('fitnesscoach.refresh_token', response.refresh_token);
+      await secureStorage.setItemAsync('fitnesscoach.refresh_token', response.refresh_token);
 
       // Clear previous user's workout state and load this user's status (prevents ghost "workout in progress")
       try {

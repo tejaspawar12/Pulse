@@ -6,7 +6,7 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SecureStore from 'expo-secure-store';
+import { secureStorage } from '../../utils/secureStorage';
 import { useUserStore } from '../../store/userStore';
 
 function getApiBaseUrl(): string {
@@ -27,7 +27,7 @@ async function getNewAccessToken(): Promise<string> {
     return refreshPromise;
   }
   refreshPromise = (async () => {
-    const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+    const refreshToken = await secureStorage.getItemAsync(REFRESH_TOKEN_KEY);
     if (!refreshToken) {
       throw new Error('No refresh token available');
     }
@@ -39,7 +39,7 @@ async function getNewAccessToken(): Promise<string> {
     );
     const { access_token, refresh_token: newRefreshToken } = data;
     useUserStore.getState().setAuthToken(access_token);
-    await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, newRefreshToken);
+    await secureStorage.setItemAsync(REFRESH_TOKEN_KEY, newRefreshToken);
     return access_token;
   })().finally(() => {
     refreshPromise = null;
@@ -97,7 +97,7 @@ class ApiClient {
             return this.client(originalRequest);
           } catch (refreshError) {
             try {
-              await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+              await secureStorage.deleteItemAsync(REFRESH_TOKEN_KEY);
             } catch (_e) {
               // ignore
             }

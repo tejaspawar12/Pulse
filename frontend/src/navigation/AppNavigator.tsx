@@ -6,7 +6,7 @@
 import React, { useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { LogScreen } from '../screens/LogScreen';
 import { HistoryStackNavigator } from './HistoryStackNavigator';
 import { CoachScreen } from '../screens/CoachScreen';
@@ -70,7 +70,7 @@ const AppNavigatorComponent: React.FC<AppNavigatorProps> = ({ activeWorkoutSumma
   // Show main app: stack with tabs + VerifyEmail screen (Phase 2 Week 1)
   // Hevy-like: hide tab bar when workout is active so screen is focused on logging
   const MainTabsScreen = () => (
-    <View style={{ flex: 1 }}>
+    <View style={[styles.tabsContainer, Platform.OS === 'web' && styles.tabsContainerWeb]}>
       <Tab.Navigator
         screenOptions={{
           headerShown: true,
@@ -152,6 +152,12 @@ const AppNavigatorComponent: React.FC<AppNavigatorProps> = ({ activeWorkoutSumma
 };
 
 const styles = StyleSheet.create({
+  tabsContainer: {
+    flex: 1,
+  },
+  tabsContainerWeb: {
+    minHeight: '100vh',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',

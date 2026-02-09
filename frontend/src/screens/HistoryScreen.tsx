@@ -12,6 +12,8 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Pressable,
+  Platform,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { WorkoutSummary } from '../types/workout.types';
@@ -50,33 +52,6 @@ export const HistoryScreen: React.FC = () => {
   // ⚠️ FIX: Avoid onEndReached firing on mount
   const didMountRef = useRef(false);
   const hasInitiallyLoadedRef = useRef(false);
-
-  // Load initial workouts
-  useEffect(() => {
-    loadWorkouts().then(() => {
-      hasInitiallyLoadedRef.current = true;
-    });
-  }, []);
-
-  // Refetch when History tab is focused (e.g. after finishing a workout on Log tab)
-  useFocusEffect(
-    useCallback(() => {
-      if (hasInitiallyLoadedRef.current) {
-        loadWorkouts();
-      }
-    }, [loadWorkouts])
-  );
-
-  // Fetch last 7 days summary when History tab is focused (for preview row); use cache when offline
-  useFocusEffect(
-    useCallback(() => {
-      let cancelled = false;
-      getCachedOrFetchStatsSummary7(() => statsApi.getSummary(7)).then((data) => {
-        if (!cancelled) setPreviewSummary(data ?? null);
-      });
-      return () => { cancelled = true; };
-    }, [getCachedOrFetchStatsSummary7])
-  );
 
   const loadWorkouts = useCallback(
     async (cursor?: string) => {
@@ -129,6 +104,33 @@ export const HistoryScreen: React.FC = () => {
     },
     [isOnline, cachedHistory]
   );
+
+  // Load initial workouts
+  useEffect(() => {
+    loadWorkouts().then(() => {
+      hasInitiallyLoadedRef.current = true;
+    });
+  }, [loadWorkouts]);
+
+  // Refetch when History tab is focused (e.g. after finishing a workout on Log tab)
+  useFocusEffect(
+    useCallback(() => {
+      if (hasInitiallyLoadedRef.current) {
+        loadWorkouts();
+      }
+    }, [loadWorkouts])
+  );
+
+  // Fetch last 7 days summary when History tab is focused (for preview row); use cache when offline
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      getCachedOrFetchStatsSummary7(() => statsApi.getSummary(7)).then((data) => {
+        if (!cancelled) setPreviewSummary(data ?? null);
+      });
+      return () => { cancelled = true; };
+    }, [getCachedOrFetchStatsSummary7])
+  );
   
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -180,7 +182,13 @@ export const HistoryScreen: React.FC = () => {
   }, [navigation]);
 
   const handleReportPress = useCallback(() => {
-    (navigation.getParent() as any)?.getParent()?.navigate('WeeklyReport');
+    const parent = navigation.getParent() as any;
+    const root = parent?.getParent?.();
+    if (root?.navigate) {
+      root.navigate('WeeklyReport');
+    } else if (parent?.navigate) {
+      parent.navigate('WeeklyReport');
+    }
   }, [navigation]);
 
   const previewLabel = (() => {
@@ -192,34 +200,75 @@ export const HistoryScreen: React.FC = () => {
 
   const isDemoUser = isPortfolioMode && (userProfile?.email ?? '').toLowerCase() === DEMO_EMAIL;
 
-  const renderListHeader = useCallback(() => (
+  const renderListHeader = useCallback(() => {
+    const webCursor = Platform.OS === 'web' ? { cursor: 'pointer' as const } : {};
+    const isWeb = Platform.OS === 'web';
+    return (
     <>
-      <TouchableOpacity
-        style={styles.linkRow}
-        onPress={handleReportPress}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.linkRowIcon}>📋</Text>
-        <Text style={styles.linkRowLabel}>Weekly Report</Text>
-        <Text style={styles.chevron}>›</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.linkRow}
-        onPress={handleProgressTrendsPress}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.linkRowIcon}>📈</Text>
-        <Text style={styles.linkRowLabel}>Progress & Trends</Text>
-        <Text style={styles.chevron}>›</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.previewRow}
-        onPress={handleProgressTrendsPress}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.previewRowText} numberOfLines={1}>{previewLabel}</Text>
-        <Text style={styles.chevron}>›</Text>
-      </TouchableOpacity>
+      {isWeb ? (
+        <View
+          style={[styles.linkRow, webCursor]}
+          onClick={handleReportPress}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e: any) => e.key === 'Enter' && handleReportPress()}
+        >
+          <Text style={styles.linkRowIcon}>📋</Text>
+          <Text style={styles.linkRowLabel}>Weekly Report</Text>
+          <Text style={styles.chevron}>›</Text>
+        </View>
+      ) : (
+        <Pressable
+          style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.7 }]}
+          onPress={handleReportPress}
+        >
+          <Text style={styles.linkRowIcon}>📋</Text>
+          <Text style={styles.linkRowLabel}>Weekly Report</Text>
+          <Text style={styles.chevron}>›</Text>
+        </Pressable>
+      )}
+      {isWeb ? (
+        <View
+          style={[styles.linkRow, webCursor]}
+          onClick={handleProgressTrendsPress}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e: any) => e.key === 'Enter' && handleProgressTrendsPress()}
+        >
+          <Text style={styles.linkRowIcon}>📈</Text>
+          <Text style={styles.linkRowLabel}>Progress & Trends</Text>
+          <Text style={styles.chevron}>›</Text>
+        </View>
+      ) : (
+        <Pressable
+          style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.7 }]}
+          onPress={handleProgressTrendsPress}
+        >
+          <Text style={styles.linkRowIcon}>📈</Text>
+          <Text style={styles.linkRowLabel}>Progress & Trends</Text>
+          <Text style={styles.chevron}>›</Text>
+        </Pressable>
+      )}
+      {isWeb ? (
+        <View
+          style={[styles.previewRow, webCursor]}
+          onClick={handleProgressTrendsPress}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e: any) => e.key === 'Enter' && handleProgressTrendsPress()}
+        >
+          <Text style={styles.previewRowText} numberOfLines={1}>{previewLabel}</Text>
+          <Text style={styles.chevron}>›</Text>
+        </View>
+      ) : (
+        <Pressable
+          style={({ pressed }) => [styles.previewRow, pressed && { opacity: 0.7 }]}
+          onPress={handleProgressTrendsPress}
+        >
+          <Text style={styles.previewRowText} numberOfLines={1}>{previewLabel}</Text>
+          <Text style={styles.chevron}>›</Text>
+        </Pressable>
+      )}
       {isDemoUser && (
         <TouchableOpacity
           style={[styles.loadSampleButtonHeader, seeding && styles.loadSampleButtonDisabled]}
@@ -236,20 +285,23 @@ export const HistoryScreen: React.FC = () => {
         </TouchableOpacity>
       )}
     </>
-  ), [previewLabel, handleProgressTrendsPress, handleReportPress, isDemoUser, seeding, isOnline, handleLoadSampleWorkouts, workouts.length]);
+  );
+  }, [previewLabel, handleProgressTrendsPress, handleReportPress, isDemoUser, seeding, isOnline, handleLoadSampleWorkouts, workouts.length]);
   
+  const containerStyle = [styles.centerContainer, Platform.OS === 'web' && { minHeight: '100vh' }];
+
   if (loading && workouts.length === 0) {
     return (
-      <View style={styles.centerContainer}>
+      <View style={containerStyle}>
         <ActivityIndicator size="large" />
         <Text style={styles.loadingText}>Loading history...</Text>
       </View>
     );
   }
-  
+
   if (error && workouts.length === 0) {
     return (
-      <View style={styles.centerContainer}>
+      <View style={containerStyle}>
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity
           style={styles.retryButton}
@@ -262,7 +314,7 @@ export const HistoryScreen: React.FC = () => {
   }
   
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, Platform.OS === 'web' && { minHeight: '100vh' }]}>
       {!isPortfolioMode && !userProfile?.email_verified && <VerifyEmailBanner />}
       <FlatList
         data={workouts}

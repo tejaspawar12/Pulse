@@ -3,7 +3,7 @@
  * Shows "Start Workout" button or active workout session.
  */
 import React, { useEffect, useLayoutEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, FlatList, RefreshControl, TextInput, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Pressable, StyleSheet, ActivityIndicator, FlatList, RefreshControl, TextInput, ScrollView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useUserStore } from '../store/userStore';
@@ -676,43 +676,54 @@ export const LogScreen: React.FC = () => {
 
     const netInfo = await NetInfo.fetch();
     if (!netInfo.isConnected) {
-      Alert.alert(
-        'No Internet',
-        'Discard workout requires internet connection. Please connect and try again.'
-      );
+      if (Platform.OS === 'web') {
+        window.alert('Discard workout requires internet connection. Please connect and try again.');
+      } else {
+        Alert.alert(
+          'No Internet',
+          'Discard workout requires internet connection. Please connect and try again.'
+        );
+      }
       return;
     }
 
-    Alert.alert(
-      'Discard workout',
-      'Are you sure? This workout will not be saved.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Discard',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setDiscardLoading(true);
-              setError(null);
-              await workoutApi.discardWorkout(activeWorkout.id);
-              userApi.clearLastPerformanceCache();
-              clearActiveWorkout();
-              const status = await userApi.getStatus();
-              setUserStatus(status);
-              setFinishModalVisible(false);
-            } catch (err: unknown) {
-              const msg = err && typeof (err as any).response?.data?.detail === 'string'
-                ? (err as any).response.data.detail
-                : 'Failed to discard workout. Please try again.';
-              Alert.alert('Error', msg);
-            } finally {
-              setDiscardLoading(false);
-            }
-          },
-        },
-      ]
-    );
+    const runDiscard = async () => {
+      try {
+        setDiscardLoading(true);
+        setError(null);
+        await workoutApi.discardWorkout(activeWorkout!.id);
+        userApi.clearLastPerformanceCache();
+        clearActiveWorkout();
+        const status = await userApi.getStatus();
+        setUserStatus(status);
+        setFinishModalVisible(false);
+      } catch (err: unknown) {
+        const msg = err && typeof (err as any).response?.data?.detail === 'string'
+          ? (err as any).response.data.detail
+          : 'Failed to discard workout. Please try again.';
+        if (Platform.OS === 'web') {
+          window.alert(msg);
+        } else {
+          Alert.alert('Error', msg);
+        }
+      } finally {
+        setDiscardLoading(false);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('Are you sure? This workout will not be saved.');
+      if (confirmed) await runDiscard();
+    } else {
+      Alert.alert(
+        'Discard workout',
+        'Are you sure? This workout will not be saved.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Discard', style: 'destructive', onPress: runDiscard },
+        ]
+      );
+    }
   };
 
   if (activeWorkout) {
@@ -813,6 +824,7 @@ export const LogScreen: React.FC = () => {
         {!isOnline && <OfflineBanner />}
         <GoalLabel />
         <FlatList
+          style={Platform.OS === 'web' ? { zIndex: 0 } : undefined}
           data={sortedExercises}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={workoutListHeader}
@@ -850,12 +862,15 @@ export const LogScreen: React.FC = () => {
           )}
         />
         {/* Hevy-like: Add Exercise + Discard only (Finish is in header) */}
-        <View style={[styles.workoutActionBar, { paddingBottom: actionBarPaddingBottom }]}>
-          <TouchableOpacity
+        <View
+          style={[styles.workoutActionBar, { paddingBottom: actionBarPaddingBottom }]}
+          pointerEvents="auto"
+        >
+          <Pressable
             style={[styles.actionBarAdd, (loading || !isOnline) && styles.addExerciseButtonDisabled]}
             onPress={() => setExercisePickerVisible(true)}
             disabled={loading || !isOnline}
-            activeOpacity={0.8}
+            android_ripple={undefined}
           >
             {loading ? (
               <ActivityIndicator size="small" color="#fff" />
@@ -865,15 +880,19 @@ export const LogScreen: React.FC = () => {
                 <Text style={styles.actionBarAddLabel} numberOfLines={1}>Add Exercise</Text>
               </>
             )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionBarDiscard, (loading || finishLoading || discardLoading || !isOnline) && styles.discardButtonDisabled]}
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [
+              styles.actionBarDiscard,
+              (loading || finishLoading || discardLoading) && styles.discardButtonDisabled,
+              Platform.OS === 'web' && { cursor: (loading || finishLoading || discardLoading) ? 'default' : 'pointer' },
+              pressed && styles.actionBarDiscardPressed,
+            ]}
             onPress={handleDiscardWorkout}
-            disabled={loading || finishLoading || discardLoading || !isOnline}
-            activeOpacity={0.8}
+            disabled={loading || finishLoading || discardLoading}
           >
             <Text style={styles.actionBarDiscardLabel} numberOfLines={1}>{discardLoading ? '...' : 'Discard'}</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {/* Exercise Picker Modal */}
@@ -1092,6 +1111,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    zIndex: 1000,
     flexDirection: 'row',
     alignItems: 'stretch',
     gap: 8,
@@ -1153,6 +1173,9 @@ const styles = StyleSheet.create({
     color: '#FF3B30',
     fontSize: 13,
     fontWeight: '600',
+  },
+  actionBarDiscardPressed: {
+    opacity: 0.8,
   },
   addExerciseButtonContainer: {
     paddingHorizontal: 20,

@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { useWeeklyReports } from '../hooks/useWeeklyReports';
 import { useOfflineCache } from '../hooks/useOfflineCache';
@@ -49,9 +50,12 @@ export const WeeklyReportScreen: React.FC = () => {
     setRefreshing(false);
   }, [refetch]);
 
+  const webMinHeight = Platform.OS === 'web' ? { minHeight: '100vh' } : {};
+  const centerStyle = [styles.center, webMinHeight];
+
   if (loading && !latest) {
     return (
-      <View style={styles.center}>
+      <View style={centerStyle}>
         <ActivityIndicator size="large" />
         <Text style={styles.loadingText}>Loading report…</Text>
       </View>
@@ -60,7 +64,7 @@ export const WeeklyReportScreen: React.FC = () => {
 
   if (error && !latest) {
     return (
-      <View style={styles.center}>
+      <View style={centerStyle}>
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={refetch}>
           <Text style={styles.retryButtonText}>Retry</Text>
@@ -72,6 +76,7 @@ export const WeeklyReportScreen: React.FC = () => {
   if (!latest) {
     return (
       <ScrollView
+        style={webMinHeight}
         contentContainerStyle={[styles.container, styles.emptyContainer]}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -92,6 +97,7 @@ export const WeeklyReportScreen: React.FC = () => {
   if (latest.status === 'insufficient_data') {
     return (
       <ScrollView
+        style={webMinHeight}
         contentContainerStyle={styles.container}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -115,6 +121,7 @@ export const WeeklyReportScreen: React.FC = () => {
 
   return (
     <ScrollView
+      style={webMinHeight}
       contentContainerStyle={styles.container}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />

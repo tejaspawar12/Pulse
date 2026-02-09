@@ -2,7 +2,7 @@
  * History Stack Navigator - Handles navigation from History list to Workout Detail, Progress & Trends, Insights (Phase 3).
  */
 import React from 'react';
-import { TouchableOpacity, Text, View } from 'react-native';
+import { TouchableOpacity, Text, View, Platform } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { HistoryScreen } from '../screens/HistoryScreen';
 import { WorkoutDetailScreen } from '../screens/WorkoutDetailScreen';
@@ -12,16 +12,20 @@ import { isPortfolioMode } from '../config/constants';
 
 const Stack = createStackNavigator();
 
+const webContainerStyle = Platform.OS === 'web' ? { flex: 1, minHeight: '100vh', width: '100%' } : { flex: 1 };
+
 export const HistoryStackNavigator: React.FC = () => {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: true,
-      }}
-    >
-      <Stack.Screen
-        name="HistoryList"
-        component={HistoryScreen}
+    <View style={webContainerStyle}>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: true,
+          ...(Platform.OS === 'web' && { cardStyle: { flex: 1 } }),
+        }}
+      >
+        <Stack.Screen
+          name="HistoryList"
+          component={HistoryScreen}
         options={({ navigation }) => ({
           title: 'History',
           headerRight: isPortfolioMode
@@ -57,6 +61,7 @@ export const HistoryStackNavigator: React.FC = () => {
           title: 'Insights',
         }}
       />
-    </Stack.Navigator>
+      </Stack.Navigator>
+    </View>
   );
 };

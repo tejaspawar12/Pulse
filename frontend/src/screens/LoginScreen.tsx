@@ -14,7 +14,7 @@ import {
   Platform,
   ScrollView
 } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+import { secureStorage } from '../utils/secureStorage';
 import { authApi } from '../services/api/auth.api';
 import { userApi } from '../services/api/user.api';
 import { useUserStore } from '../store/userStore';
@@ -86,7 +86,7 @@ export const LoginScreen: React.FC = () => {
 
   const completeLogin = async (response: { access_token: string; refresh_token: string; user: any }) => {
     await login(response.access_token, response.user);
-    await SecureStore.setItemAsync('fitnesscoach.refresh_token', response.refresh_token);
+    await secureStorage.setItemAsync('fitnesscoach.refresh_token', response.refresh_token);
     try {
       useWorkoutStore.getState().clearActiveWorkout();
       useWorkoutStore.getState().setLoaded(false);

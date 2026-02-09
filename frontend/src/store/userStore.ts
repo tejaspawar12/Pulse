@@ -8,7 +8,7 @@
  */
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SecureStore from 'expo-secure-store';
+import { secureStorage } from '../utils/secureStorage';
 import { UserStatusOut } from '../types/workout.types';
 import { User } from '../types/user.types';
 
@@ -30,19 +30,19 @@ const normalizeBoolean = (value: any): boolean => {
 /** Refresh token key (SecureStore only, not in Zustand state). */
 const REFRESH_TOKEN_KEY = 'fitnesscoach.refresh_token';
 
-/** Save refresh token to SecureStore (call after login/register or refresh). */
+/** Save refresh token (SecureStore on native, localStorage on web). */
 export async function saveRefreshToken(token: string): Promise<void> {
-  await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, token);
+  await secureStorage.setItemAsync(REFRESH_TOKEN_KEY, token);
 }
 
-/** Get refresh token from SecureStore. */
+/** Get refresh token. */
 export async function getRefreshToken(): Promise<string | null> {
-  return SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+  return secureStorage.getItemAsync(REFRESH_TOKEN_KEY);
 }
 
-/** Clear refresh token from SecureStore. */
+/** Clear refresh token. */
 export async function clearRefreshToken(): Promise<void> {
-  await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+  await secureStorage.deleteItemAsync(REFRESH_TOKEN_KEY);
 }
 
 interface UserState {
@@ -94,7 +94,7 @@ export const useUserStore = create<UserState>()((set) => ({
   proTrialEndsAt: null,
 
   login: async (token, user) => {
-    await SecureStore.setItemAsync('fitnesscoach.auth_token', token);
+    await secureStorage.setItemAsync('fitnesscoach.auth_token', token);
     const emailVerified = user.email_verified ?? false;
     const entitlement = (user.entitlement ?? 'free') as 'free' | 'pro';
     const proTrialEndsAt = user.pro_trial_ends_at ?? null;
@@ -110,12 +110,12 @@ export const useUserStore = create<UserState>()((set) => ({
 
   logout: async () => {
     try {
-      await SecureStore.deleteItemAsync('fitnesscoach.auth_token');
+      await secureStorage.deleteItemAsync('fitnesscoach.auth_token');
     } catch (error) {
       console.warn('Error clearing auth token:', error);
     }
     try {
-      await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+      await secureStorage.deleteItemAsync(REFRESH_TOKEN_KEY);
     } catch (error) {
       console.warn('Error clearing refresh token:', error);
     }
@@ -166,10 +166,10 @@ export const useUserStore = create<UserState>()((set) => ({
 
   setAuthToken: async (token) => {
     if (token) {
-      await SecureStore.setItemAsync('fitnesscoach.auth_token', token);
+      await secureStorage.setItemAsync('fitnesscoach.auth_token', token);
     } else {
       try {
-        await SecureStore.deleteItemAsync('fitnesscoach.auth_token');
+        await secureStorage.deleteItemAsync('fitnesscoach.auth_token');
       } catch (error) {
         // Ignore errors
       }
@@ -182,9 +182,9 @@ export const useUserStore = create<UserState>()((set) => ({
     set({ authLoading: true });
     
     try {
-      // ⚠️ CRITICAL: Read token from SecureStore (only during bootstrap)
+      // ⚠️ CRITICAL: Read token from secure storage (only during bootstrap)
       // ✅ Use namespaced key: 'fitnesscoach.auth_token'
-      const token = await SecureStore.getItemAsync('fitnesscoach.auth_token');
+      const token = await secureStorage.getItemAsync('fitnesscoach.auth_token');
       
       if (!token) {
         // No token - not authenticated
@@ -218,7 +218,7 @@ export const useUserStore = create<UserState>()((set) => ({
       } catch (error) {
         // Token invalid - clear it
         try {
-          await SecureStore.deleteItemAsync('fitnesscoach.auth_token');
+          await secureStorage.deleteItemAsync('fitnesscoach.auth_token');
         } catch (deleteError) {
           // Ignore delete errors
         }

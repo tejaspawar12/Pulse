@@ -153,16 +153,9 @@ export const CoachScreen: React.FC = () => {
                     style={[styles.chatBubbleWrap, isUser ? styles.chatBubbleWrapUser : styles.chatBubbleWrapAssistant]}
                   >
                     <View style={[styles.chatBubble, isUser ? styles.chatBubbleUser : styles.chatBubbleAssistant]}>
-                      <TextInput
-                        value={item.content}
-                        editable={false}
-                        multiline
-                        scrollEnabled={false}
-                        style={[styles.chatBubbleText, isUser ? styles.chatBubbleTextUser : styles.chatBubbleTextAssistant]}
-                        contextMenuHidden={false}
-                        selectTextOnFocus={false}
-                        underlineColorAndroid="transparent"
-                      />
+                      <Text style={[styles.chatBubbleText, isUser ? styles.chatBubbleTextUser : styles.chatBubbleTextAssistant]}>
+                        {item.content}
+                      </Text>
                     </View>
                   </View>
                 );

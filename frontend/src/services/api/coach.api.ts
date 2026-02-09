@@ -80,7 +80,8 @@ export const coachApi = {
   },
 
   sendChatMessage: async (message: string): Promise<{ reply: string }> => {
-    const res = await apiClient.post<{ reply: string }>('/coach/chat', { message });
+    // Coach LLM can take 15–60s; use longer timeout so web and native both succeed
+    const res = await apiClient.post<{ reply: string }>('/coach/chat', { message }, { timeout: 60000 });
     return res.data;
   },
 

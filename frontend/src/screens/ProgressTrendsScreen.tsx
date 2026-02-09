@@ -10,6 +10,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useStats, PeriodDays } from '../hooks/useStats';
 import { useUserUnit } from '../hooks/useUserUnit';
@@ -23,9 +24,12 @@ export const ProgressTrendsScreen: React.FC = () => {
   const units = useUserUnit();
   const { summary, streak, volume, loading, error, refetch } = useStats(period);
 
+  const webMinHeight = Platform.OS === 'web' ? { minHeight: '100vh' } : {};
+  const centerStyle = [styles.centerContainer, webMinHeight];
+
   if (loading && !summary && !streak && !volume) {
     return (
-      <View style={styles.centerContainer}>
+      <View style={centerStyle}>
         <ActivityIndicator size="large" />
         <Text style={styles.loadingText}>Loading stats...</Text>
       </View>
@@ -34,7 +38,7 @@ export const ProgressTrendsScreen: React.FC = () => {
 
   if (error && !summary && !streak && !volume) {
     return (
-      <View style={styles.centerContainer}>
+      <View style={centerStyle}>
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={refetch}>
           <Text style={styles.retryButtonText}>Retry</Text>
@@ -44,7 +48,7 @@ export const ProgressTrendsScreen: React.FC = () => {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, webMinHeight]} contentContainerStyle={styles.content}>
       <View style={styles.periodWrap}>
         <PeriodSelector value={period} onChange={setPeriod} />
       </View>
