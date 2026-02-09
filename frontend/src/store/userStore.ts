@@ -109,34 +109,7 @@ export const useUserStore = create<UserState>()((set) => ({
   },
 
   logout: async () => {
-    try {
-      await secureStorage.deleteItemAsync('fitnesscoach.auth_token');
-    } catch (error) {
-      console.warn('Error clearing auth token:', error);
-    }
-    try {
-      await secureStorage.deleteItemAsync(REFRESH_TOKEN_KEY);
-    } catch (error) {
-      console.warn('Error clearing refresh token:', error);
-    }
-
-    // Clear workout store
-    try {
-      const { useWorkoutStore } = require('./workoutStore');
-      useWorkoutStore.getState().clearActiveWorkout();
-      useWorkoutStore.getState().setLoaded(false);
-    } catch (_e) {
-      // Ignore if workoutStore not available (e.g. circular load)
-    }
-
-    // Clear offline cache (Phase 2 Week 4) so next user doesn't see previous user's data
-    try {
-      const { useOfflineStore } = require('./offlineStore');
-      useOfflineStore.getState().clearCache();
-    } catch (_e) {
-      // Ignore if offlineStore not available
-    }
-
+    // Set state FIRST so UI switches to login immediately (fixes logout not working on web/native)
     set({
       isAuthenticated: false,
       authToken: null,
@@ -147,6 +120,31 @@ export const useUserStore = create<UserState>()((set) => ({
       entitlement: 'free',
       proTrialEndsAt: null,
     });
+
+    // Then clear storage and other stores (best-effort; don't block UI)
+    try {
+      await secureStorage.deleteItemAsync('fitnesscoach.auth_token');
+    } catch (error) {
+      console.warn('Error clearing auth token:', error);
+    }
+    try {
+      await secureStorage.deleteItemAsync(REFRESH_TOKEN_KEY);
+    } catch (error) {
+      console.warn('Error clearing refresh token:', error);
+    }
+    try {
+      const { useWorkoutStore } = require('./workoutStore');
+      useWorkoutStore.getState().clearActiveWorkout();
+      useWorkoutStore.getState().setLoaded(false);
+    } catch (_e) {
+      // Ignore if workoutStore not available
+    }
+    try {
+      const { useOfflineStore } = require('./offlineStore');
+      useOfflineStore.getState().clearCache();
+    } catch (_e) {
+      // Ignore if offlineStore not available
+    }
   },
 
   setEmailVerified: (verified, trialEndsAt) => {

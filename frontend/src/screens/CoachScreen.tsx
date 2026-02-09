@@ -13,6 +13,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useOfflineCache } from '../hooks/useOfflineCache';
@@ -31,6 +32,7 @@ export const CoachScreen: React.FC = () => {
   const [chatLoading, setChatLoading] = useState(true);
   const [chatInput, setChatInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   const loadChatHistory = useCallback(async () => {
     if (!isOnline) {
@@ -87,6 +89,32 @@ export const CoachScreen: React.FC = () => {
     }
   };
 
+  const handleClearChat = useCallback(() => {
+    if (!isOnline || clearing || chatMessages.length === 0) return;
+    Alert.alert(
+      'Clear chat history',
+      'Remove all messages and start a new conversation?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: async () => {
+            setClearing(true);
+            try {
+              await coachApi.clearChatHistory();
+              setChatMessages([]);
+            } catch {
+              Alert.alert('Error', 'Could not clear chat. Please try again.');
+            } finally {
+              setClearing(false);
+            }
+          },
+        },
+      ]
+    );
+  }, [isOnline, clearing, chatMessages.length]);
+
   if (loading && !commitment.commitment && !coach.message) {
     return (
       <View style={styles.centered}>
@@ -132,7 +160,22 @@ export const CoachScreen: React.FC = () => {
         </View>
 
         <View style={styles.chatSection}>
-          <Text style={styles.sectionTitle}>Chat with Coach</Text>
+          <View style={styles.chatSectionHeader}>
+            <Text style={styles.sectionTitle}>Chat with Coach</Text>
+            {chatMessages.length > 0 && (
+              <TouchableOpacity
+                style={styles.clearChatButton}
+                onPress={handleClearChat}
+                disabled={!isOnline || clearing}
+              >
+                {clearing ? (
+                  <ActivityIndicator size="small" color="#999" />
+                ) : (
+                  <Text style={styles.clearChatButtonText}>Clear chat</Text>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
           <Text style={styles.hint}>
             Ask about your training, consistency, or next steps. Coach answers using your real data only.
           </Text>
@@ -215,6 +258,20 @@ const styles = StyleSheet.create({
   loadingText: { marginTop: 12, fontSize: 16, color: '#666' },
   section: { marginBottom: 24 },
   chatSection: { marginBottom: 24 },
+  chatSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  clearChatButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  clearChatButtonText: {
+    fontSize: 14,
+    color: '#999',
+  },
   sectionTitle: { fontSize: 18, fontWeight: '600', marginBottom: 8, color: '#111' },
   hint: { fontSize: 13, color: '#666', marginBottom: 12 },
   chatLoadingWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 16 },

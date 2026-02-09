@@ -85,6 +85,11 @@ export const coachApi = {
     return res.data;
   },
 
+  clearChatHistory: async (): Promise<{ deleted: number }> => {
+    const res = await apiClient.delete<{ deleted: number }>('/coach/chat');
+    return res.data;
+  },
+
   respondToMessage: async (replyText: string): Promise<void> => {
     await apiClient.post('/coach/respond', { reply_text: replyText });
   },
