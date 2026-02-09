@@ -9,11 +9,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { secureStorage } from '../../utils/secureStorage';
 import { useUserStore } from '../../store/userStore';
 
+const API_V1 = '/api/v1';
+
 function getApiBaseUrl(): string {
   if (typeof window !== 'undefined' && (window.location?.hostname === 'localhost' || window.location?.hostname === '127.0.0.1')) {
-    return 'http://localhost:8000/api/v1';
+    return `http://localhost:8000${API_V1}`;
   }
-  return process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+  const env = process.env.EXPO_PUBLIC_API_URL?.trim() || '';
+  if (!env) return `http://localhost:8000${API_V1}`;
+  const base = env.replace(/\/+$/, '');
+  return base.endsWith(API_V1) ? base : `${base}${API_V1}`;
 }
 const API_BASE_URL = getApiBaseUrl();
 
