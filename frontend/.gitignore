@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Environment (secrets, local API URL)
+.env
+.env.local
+.env.*.local
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Build / Metro
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+*.tsbuildinfo
+
+# Testing / coverage
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Debug / OS
+.DS_Store
+Thumbs.db
