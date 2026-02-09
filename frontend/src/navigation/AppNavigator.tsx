@@ -69,15 +69,17 @@ const AppNavigatorComponent: React.FC<AppNavigatorProps> = ({ activeWorkoutSumma
 
   // Show main app: stack with tabs + VerifyEmail screen (Phase 2 Week 1)
   // Hevy-like: hide tab bar when workout is active so screen is focused on logging
+  const isWeb = Platform.OS === 'web';
   const MainTabsScreen = () => (
     <View style={styles.tabsContainer}>
       <Tab.Navigator
         screenOptions={{
           headerShown: true,
-          tabBarLabelStyle: { fontSize: 12 },
+          tabBarLabelStyle: isWeb ? styles.tabBarLabelWeb : { fontSize: 12 },
+          tabBarItemStyle: isWeb ? styles.tabBarItemWeb : undefined,
           tabBarStyle: [
             { display: activeWorkoutSummary ? 'none' : 'flex' },
-            Platform.OS === 'web' && styles.tabBarWeb,
+            isWeb && styles.tabBarWeb,
           ].filter(Boolean),
         }}
       >
@@ -158,10 +160,24 @@ const styles = StyleSheet.create({
   tabsContainer: {
     flex: 1,
   },
-  // Keep tab bar visible on phone web (above browser chrome) and laptop web
+  // Web: taller bar so labels are fully visible; extra padding above browser chrome on mobile
   tabBarWeb: {
-    paddingBottom: 8,
-    minHeight: 56,
+    minHeight: 64,
+    paddingTop: 8,
+    paddingBottom: 12,
+  },
+  // Web: larger label so "Log", "History", "Coach", "Profile" are fully visible on mobile
+  tabBarLabelWeb: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  // Web: bigger touch targets and equal width so tabs are easy to tap on mobile
+  tabBarItemWeb: {
+    flex: 1,
+    minHeight: 48,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    cursor: 'pointer',
   },
   loadingContainer: {
     flex: 1,
