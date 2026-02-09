@@ -21,6 +21,7 @@ import { ActiveWorkoutSummary } from '../types/workout.types';
 import { useUserStore } from '../store/userStore';
 import { isPortfolioMode } from '../config/constants';
 import type { AuthStackParamList, MainStackParamList, TabParamList } from './types';
+import { WebTabBar } from './WebTabBar';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const AuthStack = createStackNavigator<AuthStackParamList>();
@@ -73,14 +74,11 @@ const AppNavigatorComponent: React.FC<AppNavigatorProps> = ({ activeWorkoutSumma
   const MainTabsScreen = () => (
     <View style={styles.tabsContainer}>
       <Tab.Navigator
+        tabBar={isWeb ? (props) => (activeWorkoutSummary ? null : <WebTabBar {...props} />) : undefined}
         screenOptions={{
           headerShown: true,
-          tabBarLabelStyle: isWeb ? styles.tabBarLabelWeb : { fontSize: 12 },
-          tabBarItemStyle: isWeb ? styles.tabBarItemWeb : undefined,
-          tabBarStyle: [
-            { display: activeWorkoutSummary ? 'none' : 'flex' },
-            isWeb && styles.tabBarWeb,
-          ].filter(Boolean),
+          tabBarLabelStyle: !isWeb ? { fontSize: 12 } : undefined,
+          tabBarStyle: !isWeb ? { display: activeWorkoutSummary ? 'none' : 'flex' } : undefined,
         }}
       >
         <Tab.Screen
@@ -159,25 +157,6 @@ const AppNavigatorComponent: React.FC<AppNavigatorProps> = ({ activeWorkoutSumma
 const styles = StyleSheet.create({
   tabsContainer: {
     flex: 1,
-  },
-  // Web: taller bar so labels are fully visible; extra padding above browser chrome on mobile
-  tabBarWeb: {
-    minHeight: 64,
-    paddingTop: 8,
-    paddingBottom: 12,
-  },
-  // Web: larger label so "Log", "History", "Coach", "Profile" are fully visible on mobile
-  tabBarLabelWeb: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  // Web: bigger touch targets and equal width so tabs are easy to tap on mobile
-  tabBarItemWeb: {
-    flex: 1,
-    minHeight: 48,
-    paddingVertical: 6,
-    paddingHorizontal: 4,
-    cursor: 'pointer',
   },
   loadingContainer: {
     flex: 1,
